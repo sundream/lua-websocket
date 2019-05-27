@@ -37,13 +37,15 @@ local function socket_close(sock)
 end
 
 local function do_handshake(sock,key,protocol)
-    protocol = protocol or ""
     local accept = base64encode(sha1(key .. "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
     local handshake = string.format("HTTP/1.1 101 Switching Protocols\r\n" ..
                         "Upgrade: websocket\r\n" ..
                         "Connection: Upgrade\r\n" ..
-                        "Sec-WebSocket-Accept: %s\r\n" ..
-                        "Sec-WebSocket-Protocol: %s\r\n\r\n", accept, protocol)
+                        "Sec-WebSocket-Accept: %s\r\n",accept)
+    if protocol then
+        handshake = handshake .. string.format("Sec-WebSocket-Protocol: %s\r\n", protocol)
+    end
+    handshake = handshake .. "\r\n"
     socket_write(sock,handshake)
 end
 
@@ -210,7 +212,7 @@ end
 
 function _M.start(self,handler)
     handler.on_open(self)
-    local last_recv = ""
+    local last_recv = nil
     while true do
         local data,typ,err = self:recv_frame()
         if not data then
@@ -229,18 +231,18 @@ function _M.start(self,handler)
             handler.on_close(self,code,msg)
             break
         elseif typ == "text" then
-            last_recv = last_recv .. data
+            last_recv = last_recv and last_recv .. data or data
             -- fin
             if err ~= "again" then
                 message = last_recv
-                last_recv = ""
+                last_recv = nil
             end
         elseif typ == "binary" then
-            last_recv = last_recv .. data
+            last_recv = last_recv and last_recv .. data or data
             -- fin
             if err ~= "again" then
                 message = self.last_recv
-                self.last_recv = ""
+                last_recv = nil
             end
         end
         if message then

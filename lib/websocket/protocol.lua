@@ -37,7 +37,11 @@ local function socket_write(sock,data)
 end
 
 local function socket_read(sock,sz)
-    return socket.read(sock,sz)
+    local call_ok,ok,err = pcall(socket.read,sock,sz)
+    if not call_ok then
+        return false,ok or "closed"
+    end
+    return ok,err
 end
 
 local ok, new_tab = pcall(require, "table.new")

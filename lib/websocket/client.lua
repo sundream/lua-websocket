@@ -118,7 +118,11 @@ function _M.connect(self, uri, opts)
         end
     end
 
-    self.sock = socket_connect(host, port)
+    local sock,err = socket_connect(host, port)
+    if not sock then
+        return nil,err
+    end
+    self.sock = sock
 
     if scheme == "wss" then
         if not ssl_support then
