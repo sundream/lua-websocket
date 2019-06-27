@@ -241,7 +241,7 @@ function _M.start(self,handler)
             last_recv = last_recv and last_recv .. data or data
             -- fin
             if err ~= "again" then
-                message = self.last_recv
+                message = last_recv
                 last_recv = nil
             end
         end
